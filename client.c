@@ -1,38 +1,104 @@
-#include <arpa/inet.h>
+
+/* 
+ * Client program based on sample code
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <netdb.h> 
 #include <unistd.h>
-#include <netdb.h>
 
 
+int main(int argc, char* argv[])
+{
+	int sockfd, portno, n;
+	struct sockaddr_in serv_addr;
+	struct hostent *server;
 
-void main(int argc, char *argv[]) {
-    int sockfd = 0 /*listenfd*/, connfd = 0, n = 0;
-    char recvBuff[1025];
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
+	char buffer[256];
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0); //create socket
+	if (argc < 3) 
+	{
+		fprintf(stderr,"usage %s hostname port\n", argv[0]);
+		exit(0);
+	}
 
-    server = gethostbyname(argv[1]);
+	portno = atoi(argv[2]);
 
-    memset(&serv_addr, '0', sizeof(serv_addr)); //initialise server address
-    memset(recvBuff, '0', sizeof(recvBuff)); //initialise RECEIVE buffer
-    bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);
-    serv_addr.sin_family = AF_INET; //Type of address – internet IP
-    serv_addr.sin_port = htons(atoi(argv[2])); // port no
+	
+	/* Translate host name into peer's IP address ;
+	 * This is name translation service by the operating system 
+	 */
+	server = gethostbyname(argv[1]);
+	
+	if (server == NULL) 
+	{
+		fprintf(stderr,"ERROR, no such host\n");
+		exit(0);
+	}
+	
+	/* Building data structures for socket */
 
-    if (connect(sockfd,  (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-        printf("Error connecting to server\n");
-    } else {
-        printf("%s server\n", (char*)&serv_addr);
-    }
+	bzero((char *) &serv_addr, sizeof(serv_addr));
 
+	serv_addr.sin_family = AF_INET;
 
-    while ((n = read(connfd, recvBuff, sizeof(recvBuff)-1)) > 0) {
-        printf("%s\n\n", recvBuff);
-    }
+	bcopy((char *)server->h_addr, 
+			(char *)&serv_addr.sin_addr.s_addr,
+			server->h_length);
+
+	serv_addr.sin_port = htons(portno);
+
+	/* Create TCP socket -- active open 
+	* Preliminary steps: Setup: creation of active open socket
+	*/
+	
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	
+	if (sockfd < 0) 
+	{
+		perror("ERROR opening socket");
+		exit(0);
+	}
+	
+	if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) 
+	{
+		perror("ERROR connecting");
+		exit(0);
+	}
+
+	/* Do processing
+	*/
+	
+	printf("Please enter the message: ");
+
+	bzero(buffer,256);
+
+	fgets(buffer,255,stdin);
+
+	n = write(sockfd,buffer,strlen(buffer));
+
+	if (n < 0) 
+	{
+		perror("ERROR writing to socket");
+		exit(0);
+	}
+	
+	bzero(buffer,256);
+
+	n = read(sockfd,buffer,255);
+	
+	if (n < 0)
+	{
+		perror("ERROR reading from socket");
+		exit(0);
+	}
+
+	printf("%s\n",buffer);
+
+	return 0;
 }
