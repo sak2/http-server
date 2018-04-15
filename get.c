@@ -25,7 +25,7 @@ void parse(char* req, char* root) {
     // printf("root %s\n", root);
     // printf("path %s\n", path);
     char full_path[sizeof(path) + sizeof(root)];
-    strncpy(full_path, root, sizeof(root));
+    strcpy(full_path, root);
     strcat(full_path, path);
     // full_path[sizeof(full_path)-1] = 9;
     printf("waiittt %s end\n", full_path);
