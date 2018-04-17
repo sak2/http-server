@@ -1,4 +1,4 @@
-server: server.c
+server: server.c get.c
 	gcc -o server server.c get.c
 
 client: client.c

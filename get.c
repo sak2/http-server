@@ -2,38 +2,40 @@
 #include <stdio.h>
 #include <string.h>
 
+#define FOUND 0
+#define NOT_FOUND -1
 
-void valid_get(char* buffer) { // checks if the request is valid
-    // const char* path_start = strchr(buffer, ' ');
-    // const char* path_end = strrchr(req, ' ');
-
-    // printf("gucci\n");
-}
-
-void parse(char* req, char* root) {
-    // Extract just the file path from the request
-    // message into the char array 'path'.
-    const char* path_start = strchr(req, ' ') + 1;
-    const char* path_end = strrchr(req, ' ');
+void get(char* req, char* root, FILE** content) {
+    // Extract just the file path from the request message into the char array 'path'.
+    const char* path_start = strstr(req, "GET") + 4;
+    const char* path_end = strstr(req, "HTTP")-1;
     char path[path_end - path_start];
+    // int l = (path_end-path_start);
+    // printf("%c", l);
     strncpy(path, path_start, path_end - path_start); 
     path[sizeof(path)] = '\0'; // null terminator
-    // printf("root %s\n", root);
     char full_path[sizeof(path) + sizeof(root)];
     strcpy(full_path, root);
     strcat(full_path, path);
-    find_file(full_path);
+    printf("%s\n _____ \n", full_path);
+    if (find_file(full_path) == FOUND) open_file(content, full_path);
+    else *content = NULL;
+
 }
 
-void find_file(char* path_to_file) {
+int find_file(char* path_to_file) {
     FILE *fp;
-
     fp = fopen(path_to_file, "r");
     if (fp != NULL) {
-        printf("success...\n");
         fclose(fp);
+        printf("FOUND\n");
+        return FOUND;
     } else {
-        printf("fail\n");
-    }
-    
+        printf("NOT FOUND\n");
+        return NOT_FOUND;
+    }  
+}
+
+void open_file(FILE** file, char* path_to_file) {
+    *file = fopen(path_to_file, "r");
 }

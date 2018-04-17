@@ -1,0 +1,10 @@
+{
+    "C_Cpp.errorSquiggles": "Enabled",
+    "C_Cpp.intelliSenseEngineFallback": "Enabled",
+    "files.associations": {
+        "iostream": "c",
+        "get.h": "c",
+        "system_error": "c",
+        "ostream": "c"
+    }
+}
