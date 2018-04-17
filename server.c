@@ -2,8 +2,8 @@
  * Server program based on sample code
  */
 
-#define FOUND_RESPONSE "HTTP/1.0 200 OK\n noicee\r\n"
-#define NOT_FOUND_RESPONSE "HTTP/1.0 404 File Not Found noob feeder enjoy 4x report\r\n"
+#define FOUND_RESPONSE "HTTP/1.0 200 OK\r\n" /* add \n*/
+#define NOT_FOUND_RESPONSE "HTTP/1.0 404\r\n\r\n"
 #define BUF 100000
 
 #include <stdio.h>
@@ -14,7 +14,9 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <sys/sendfile.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "get.h"
 
 int main(int argc, char *argv[])
@@ -74,44 +76,39 @@ int main(int argc, char *argv[])
 	/* Read characters from the connection,
 		then process */
 	n = read(newsockfd,buffer,BUF-1);
-
-	if (n < 0) {
-		perror("ERROR reading from socket");
-		exit(1);
-	}
 	
-    /* using the get.c functionality here: */
+    /* *************** using the get.c functionality here: */
 	char* root = argv[2];
-	FILE* content = NULL;
-	ssize_t read;
-    get(buffer, root, &content);
-	if (content) {
-		// n = write(newsockfd, FOUND_RESPONSE, strlen(FOUND_RESPONSE));
-		// if (n < 0) {
-		// perror("ERROR writing to socket");
-		// exit(1);
-		// } 
-		write(newsockfd, content, sizeof(content));
-		// sendfile(newsockfd, fileno(content), NULL, 5000);
-		// close(fileno(content));
-		// char* line = NULL;
-    	// size_t len = 0;
-		// while ((read = getline(&line, &len, content)) != -1) {
-		// 	printf("%s", line);
-		// 	n = write(newsockfd,"I got your message",18);
-		// }
-		// n = write(newsockfd,"I got your mess3434age",18);
-	} else {
+	// Extract just the file path from the request message into the char array 'path'.
+    const char* path_start = strstr(buffer, "GET") + 4;
+    const char* path_end = strstr(buffer, "HTTP")-1;
+    char path[path_end - path_start];
+    strncpy(path, path_start, path_end - path_start); 
+    path[sizeof(path)] = '\0'; // null terminator
+    char full_path[sizeof(path) + sizeof(root)];
+    strcpy(full_path, root);
+	strcat(full_path, path);
+	strcpy(full_path, strchr(strchr(full_path, '/')+1, '/')+1);
+    printf("%s\n (_(_(_)_)_) \n", full_path);
+    if (find_file(full_path) == 0) { // 0 =found
+		
+		int fd = open(full_path, O_RDONLY);
+		struct stat st;
+		fstat(fd, &st);
+		size_t size = st.st_size;
+		
+		char response[256];
+		sprintf(response, "%sContent-Length: %zu\r\n\r\n", FOUND_RESPONSE, size);//
+		printf("(%zu) Hellooo\n%s", size, response);
+		write(newsockfd, response, strlen(response));
+		sendfile(newsockfd, fd, NULL, size);
+	} else{
 		n = write(newsockfd, NOT_FOUND_RESPONSE, strlen(NOT_FOUND_RESPONSE));
-		if (n < 0) {
-		perror("ERROR writing to socket");
-		exit(1);
-		}
 	}
+
 
 	printf("Here is the message: %s\n",buffer);
-
-	// n = write(newsockfd,"I got your message",18);
+	printf("Here is the path calculated: %s + %s = %s\n", root, path, full_path);
 	
 	if (n < 0) {
 		perror("ERROR writing to socket");
