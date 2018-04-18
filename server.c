@@ -61,39 +61,37 @@ int main(int argc, char *argv[])
 	 incoming connection requests will be queued */
 	listen(sockfd,5);
 	clilen = sizeof(cli_addr);
-
-	/* Accept a connection - block until a connection is ready to
-	 be accepted. Get back a new file descriptor to communicate on. */
-	newsockfd = accept(	sockfd, (struct sockaddr *) &cli_addr, 
-						&clilen);
-	if (newsockfd < 0) {
-		perror("ERROR on accept");
-		exit(1);
-	}
-	
-	bzero(buffer,BUF);
-	/* Read characters from the connection,
-		then process */
-	n = read(newsockfd,buffer,BUF-1);
-	
-    /* ******************************************************************************** */
-	/* ******************************************************************************** */
-	/* ******************************************************************************** */
 	char* root = argv[2];
-	// Extract just the file path from the request message into the char array 'path'.
-    parse_request_and_send_response(root, buffer, newsockfd);
-
-
-	// printf("Here is the message: %s\n",buffer);
-	// printf("Here is the path calculated: %s + %s = %s\n", root, path, full_path);
+	while(1) {
+		/* Accept a connection - block until a connection is ready to
+		be accepted. Get back a new file descriptor to communicate on. */
+		newsockfd = accept(	sockfd, (struct sockaddr *) &cli_addr, 
+							&clilen);
+		if (newsockfd < 0) {
+			perror("ERROR on accept");
+			// exit(1);
+			continue;
+		}
+		if (!fork()) {		
+			close(sockfd);
+			printf("closed sockfd\n");
+			// bzero(buffer,BUF);
+			/* Read characters from the connection, then process */
+			n = read(newsockfd,buffer,BUF-1);
+			parse_request_and_send_response(root, buffer, newsockfd);
+			close(newsockfd);
+			printf("closed newsockfd\n");
+		}
+		close(newsockfd);
+		printf("closed sockfd in parent\n");
+	}
 	
 	if (n < 0) {
 		perror("ERROR writing to socket");
 		exit(1);
 	}
-	
 	/* close socket */
-	close(sockfd);
+	// close(sockfd);
 	
 	return 0; 
 }
