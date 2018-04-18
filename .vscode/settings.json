@@ -5,6 +5,11 @@
         "iostream": "c",
         "get.h": "c",
         "system_error": "c",
-        "ostream": "c"
+        "ostream": "c",
+        "initializer_list": "c",
+        "type_traits": "c",
+        "xstring": "c",
+        "xutility": "c",
+        "stdio.h": "c"
     }
 }
