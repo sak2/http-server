@@ -6,3 +6,5 @@ home/*
 .vscode/settings.json
 home/file.txt
 server
+script.sh
+test_log.txt
